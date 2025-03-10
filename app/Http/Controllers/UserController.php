@@ -16,7 +16,6 @@ class UserController extends Controller
      */
     public function index()
     {
-
         return view('user.index');
     }
 
@@ -27,7 +26,7 @@ class UserController extends Controller
      */
     public function create()
     {
-        //
+        return view('user.create');
     }
 
     /**
@@ -40,32 +39,59 @@ class UserController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'password' => 'required',
+            'password' => 'required|min:6',
         ]);
 
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-
-            return redirect()->intended('user')->with('success', 'Logged in Successfully');
+            return redirect()->intended('users')->with('success', 'Logged in Successfully');
         }
 
         return back()->withErrors(['email' => 'Invalid Credentials'])->withInput();
     }
 
+    /**
+     * Show the registration form.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function register()
     {
-
         return view('user.registration');
     }
 
+    /**
+     * Store a newly registered user.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function registerStore(Request $request)
     {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6|confirmed',
+        ]);
 
-        $user = new User();
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->password = Hash::make($request->password);
-        $user->save();
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
 
-        return redirect()->intended('/')->with('success', 'User Register in Successfully');
+        Auth::login($user);
+
+        return redirect()->intended('user.index')->with('success', 'User Registered Successfully');
+    }
+
+    /**
+     * Logout the user.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function logout()
+    {
+        Auth::logout();
+        return redirect('/')->with('success', 'Logged out successfully');
     }
 }
